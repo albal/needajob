@@ -93,4 +93,25 @@ describe("Harvest", () => {
     expect(job.description.length).toBeLessThanOrEqual(201);
     expect(job.description.endsWith("…")).toBe(true);
   });
+
+  it("asks Adzuna for local-language Entry-Level Markers too", async () => {
+    const calls = stubAdzuna(() => []);
+    // 02:00 UTC is when de's group is due; 04:00 is be's.
+    await runHarvest(new Date("2026-10-21T02:00:00Z"));
+    await runHarvest(new Date("2026-10-21T04:00:00Z"));
+
+    const whatOr = (country: string) =>
+      calls.find((u) => u.pathname.includes(`/${country}/`))!.searchParams.get("what_or")!.split(" ");
+    expect(whatOr("de")).toEqual(expect.arrayContaining(["junior", "werkstudent", "praktikum"]));
+    expect(whatOr("be")).toEqual(expect.arrayContaining(["junior", "stagiair", "stagiaire"]));
+    expect(new Set(whatOr("be")).size).toBe(whatOr("be").length);
+  });
+
+  it("keeps local-language Entry-Level Jobs", async () => {
+    stubAdzuna((country) =>
+      country === "de" ? [adzunaResult({ id: "ws", title: "Werkstudent DevOps (m/w/d)" })] : [],
+    );
+    await runHarvest(new Date("2026-10-21T02:00:00Z"));
+    expect((await getJobs("?country=de")).body.jobs.map((j) => [j.id, j.disciplines])).toEqual([["ws", ["devops"]]]);
+  });
 });
