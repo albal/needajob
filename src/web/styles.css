@@ -143,6 +143,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.25em;
   min-width: 116px;
   min-height: 23px;
   padding: 0.125rem 0.5rem;

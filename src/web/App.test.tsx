@@ -59,7 +59,7 @@ describe("App", () => {
     expect(c.getByText("DevOps Engineer")).toBeInTheDocument();
     expect(c.getByText("Platform Engineer")).toBeInTheDocument();
     expect(c.getByRole("link", { name: "Apply" })).toHaveAttribute("href", "https://www.adzuna.co.uk/jobs/land/ad/42?v=x");
-    expect(c.getByRole("link", { name: /adzuna/i })).toHaveAttribute("href", "https://www.adzuna.co.uk");
+    expect(c.getByRole("link", { name: "Jobs by Adzuna" })).toHaveAttribute("href", "https://www.adzuna.co.uk");
     expect(screen.getByText("1 entry-level job")).toBeInTheDocument();
   });
 

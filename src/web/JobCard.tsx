@@ -47,7 +47,8 @@ export function JobCard({ job, country, saved, onToggleSave, savedAt }: Props) {
           </button>
         </div>
         <a className="adzuna" href={country.adzunaUrl} target="_blank" rel="noopener">
-          Jobs by <strong>Adzuna</strong>
+          Jobs by{" "}
+          <strong>Adzuna</strong>
         </a>
       </div>
     </article>
