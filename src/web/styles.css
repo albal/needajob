@@ -234,3 +234,33 @@ body {
     grid-template-columns: 1fr 2fr;
   }
 }
+
+.views {
+  display: flex;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.card-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button.secondary {
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+}
+
+.button.secondary[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}

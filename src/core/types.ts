@@ -50,3 +50,10 @@ export interface JobsResponse {
   locations: LocationOption[];
   updatedAt: string | null;
 }
+
+/** A copy of a Job as it was when the user saved it. */
+export interface SavedJob {
+  job: Job;
+  country: string;
+  savedAt: string;
+}
