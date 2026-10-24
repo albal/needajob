@@ -13,6 +13,12 @@ describe("App", () => {
     expect(await screen.findByText(/no jobs yet/i)).toBeInTheDocument();
   });
 
+  it("shows how fresh the Job Pool is", async () => {
+    stubApi(() => emptyResponse({ updatedAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString() }));
+    render(<App />);
+    expect(await screen.findByText("Jobs updated 7 hours ago")).toBeInTheDocument();
+  });
+
   it("shows an empty state when nothing matches", async () => {
     stubApi(() => emptyResponse({ updatedAt: new Date().toISOString() }));
     render(<App />);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { findCountry } from "../core/countries";
 import type { JobsResponse } from "../core/types";
 import { fetchJobs } from "./api";
+import { timeAgo } from "./format";
 import { JobCard } from "./JobCard";
 import { useUrlParams } from "./useUrlParams";
 
@@ -42,6 +43,7 @@ export function App() {
       <main>
         {error && <p role="alert">{error}</p>}
         {!error && !result && <p aria-busy="true">Loading jobs…</p>}
+        {result?.updatedAt && <p className="updated">Jobs updated {timeAgo(result.updatedAt)}</p>}
         {result && result.total === 0 && (
           <p className="empty">
             {result.updatedAt === null

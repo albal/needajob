@@ -159,3 +159,9 @@ body {
   justify-content: space-between;
   margin: 1rem 0;
 }
+
+.updated {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}

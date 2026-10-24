@@ -2,26 +2,50 @@ import { classifyTitle } from "../core/classify";
 import type { Job } from "../core/types";
 import { WORD_LISTS, languagesFor } from "../core/word-lists";
 import { plainText, searchAdzuna, toJob } from "./adzuna";
-import { writePool } from "./pool-store";
+import { readPool, writePool } from "./pool-store";
 
 /** Adzuna pages fetched per Harvest for each Country. */
 export const HARVEST_PAGES: Record<string, number> = { gb: 3 };
 
-export async function harvestCountry(env: Env, country: string, now: Date): Promise<void> {
+/** Jobs whose advert is older than this are dropped from the Job Pool. */
+export const MAX_AGE_DAYS = 30;
+
+async function fetchEntryLevelJobs(env: Env, country: string): Promise<Job[]> {
   const whatOr = [...new Set(languagesFor(country).flatMap((l) => WORD_LISTS[l].harvestWords))];
-  const jobs = new Map<string, Job>();
+  const jobs: Job[] = [];
 
   for (let page = 1; page <= (HARVEST_PAGES[country] ?? 1); page++) {
     const results = await searchAdzuna(env, { country, page, whatOr });
     for (const result of results) {
       const { entryLevel, disciplines } = classifyTitle(plainText(result.title), country);
-      if (!entryLevel || disciplines.length === 0) continue;
-      jobs.set(String(result.id), toJob(result, disciplines));
+      if (entryLevel && disciplines.length > 0) jobs.push(toJob(result, disciplines));
     }
     if (results.length < 50) break;
   }
+  return jobs;
+}
 
-  await writePool(env.JOB_POOLS, { country, updatedAt: now.toISOString(), jobs: [...jobs.values()] });
+/**
+ * Merges a Country's newest Entry-Level Jobs into its Job Pool. If Adzuna
+ * fails, the existing Job Pool is left untouched.
+ */
+export async function harvestCountry(env: Env, country: string, now: Date): Promise<void> {
+  let fresh: Job[];
+  try {
+    fresh = await fetchEntryLevelJobs(env, country);
+  } catch (error) {
+    console.error(`Harvest failed for ${country}; keeping the existing Job Pool`, error);
+    return;
+  }
+
+  const existing = await readPool(env.JOB_POOLS, country);
+  const merged = new Map((existing?.jobs ?? []).map((j) => [j.id, j]));
+  for (const job of fresh) merged.set(job.id, job);
+
+  const cutoff = now.getTime() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  const jobs = [...merged.values()].filter((j) => new Date(j.created).getTime() >= cutoff);
+
+  await writePool(env.JOB_POOLS, { country, updatedAt: now.toISOString(), jobs });
 }
 
 export async function harvest(env: Env, now = new Date()): Promise<void> {

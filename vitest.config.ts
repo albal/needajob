@@ -33,6 +33,7 @@ export default defineConfig({
         test: {
           name: "worker",
           include: ["src/worker/**/*.test.ts"],
+          setupFiles: ["src/worker/test-setup.ts"],
         },
       },
     ],

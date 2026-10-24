@@ -37,10 +37,12 @@ export function stubAdzuna(respond: Responder): URL[] {
   return calls;
 }
 
-export async function runHarvest(): Promise<void> {
+export async function runHarvest(now?: Date): Promise<void> {
+  if (now) vi.useFakeTimers({ now, toFake: ["Date"] });
   const ctx = createExecutionContext();
   await worker.scheduled(createScheduledController({ cron: "0 */6 * * *" }), env, ctx);
   await waitOnExecutionContext(ctx);
+  if (now) vi.useRealTimers();
 }
 
 export async function getJobs(query = ""): Promise<{ status: number; body: JobsResponse }> {

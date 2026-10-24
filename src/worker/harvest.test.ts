@@ -1,7 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { adzunaResult, getJobs, runHarvest, stubAdzuna } from "./test-helpers";
-
-afterEach(() => vi.restoreAllMocks());
 
 describe("Harvest", () => {
   it("asks Adzuna for gb's newest IT Entry-Level Jobs, three pages of 50", async () => {

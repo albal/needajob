@@ -1,7 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { adzunaResult, getJobs, runHarvest, stubAdzuna } from "./test-helpers";
-
-afterEach(() => vi.restoreAllMocks());
 
 describe("GET /api/jobs", () => {
   it("returns an empty result when the Country has never been Harvested", async () => {
