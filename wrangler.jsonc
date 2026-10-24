@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "needajob",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  // Omitting the id lets `wrangler deploy` provision the namespace.
+  "kv_namespaces": [{ "binding": "JOB_POOLS" }],
+  "observability": { "enabled": true }
+}
