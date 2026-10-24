@@ -1,13 +1,37 @@
+import type { LocationOption } from "../core/types";
 import { DISCIPLINES } from "../core/word-lists";
 
 interface Props {
   params: URLSearchParams;
+  /** Places with Jobs in the current Job Pool. */
+  locations: LocationOption[];
+  countryName: string;
   /** Called with the new Search; any page is dropped so results restart at page 1. */
   onChange: (next: URLSearchParams) => void;
 }
 
-export function SearchForm({ params, onChange }: Props) {
+const SEP = "\t";
+
+export function SearchForm({ params, locations, countryName, onChange }: Props) {
   const selected = new Set(params.getAll("discipline"));
+  const region = params.get("region") ?? "";
+  const county = params.get("county") ?? "";
+
+  // Keep a shared URL's Location selectable even if the Pool no longer has it.
+  const options = locations.some((l) => l.region === region) || !region
+    ? locations
+    : [...locations, { region, counties: county ? [county] : [] }];
+
+  const chooseLocation = (value: string) => {
+    const [r = "", c = ""] = value.split(SEP);
+    const next = new URLSearchParams(params);
+    next.delete("page");
+    next.delete("region");
+    next.delete("county");
+    if (r) next.set("region", r);
+    if (c) next.set("county", c);
+    onChange(next);
+  };
 
   const toggle = (slug: string) => {
     const next = new URLSearchParams(params);
@@ -27,6 +51,22 @@ export function SearchForm({ params, onChange }: Props) {
 
   return (
     <form className="search" onSubmit={(e) => e.preventDefault()} aria-label="Search">
+      <label className="field">
+        <span>Location</span>
+        <select value={region ? `${region}${SEP}${county}` : ""} onChange={(e) => chooseLocation(e.target.value)}>
+          <option value="">Anywhere in {countryName}</option>
+          {options.map((l) => (
+            <optgroup key={l.region} label={l.region}>
+              <option value={`${l.region}${SEP}`}>All of {l.region}</option>
+              {l.counties.map((c) => (
+                <option key={c} value={`${l.region}${SEP}${c}`}>
+                  {c}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </label>
       <fieldset className="disciplines">
         <legend>Disciplines</legend>
         <div className="toggles">

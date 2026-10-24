@@ -114,4 +114,32 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "All" }));
     expect(window.location.search).toBe("");
   });
+
+  it("narrows to a Location chosen from places in the Job Pool", async () => {
+    const api = stubApi(() =>
+      emptyResponse({
+        updatedAt: new Date().toISOString(),
+        locations: [
+          { region: "London", counties: ["Central London"] },
+          { region: "South East England", counties: ["Hampshire", "Surrey"] },
+        ],
+      }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+    const select = await screen.findByRole("combobox", { name: "Location" });
+    await screen.findByRole("option", { name: "Hampshire" });
+
+    expect(screen.getByRole("option", { name: "Anywhere in United Kingdom" })).toBeInTheDocument();
+
+    await user.selectOptions(select, screen.getByRole("option", { name: "All of South East England" }));
+    expect(window.location.search).toBe("?region=South+East+England");
+
+    await user.selectOptions(select, screen.getByRole("option", { name: "Hampshire" }));
+    expect(window.location.search).toBe("?region=South+East+England&county=Hampshire");
+    expect(String(api.mock.lastCall![0])).toBe("/api/jobs?region=South+East+England&county=Hampshire");
+
+    await user.selectOptions(select, screen.getByRole("option", { name: "Anywhere in United Kingdom" }));
+    expect(window.location.search).toBe("");
+  });
 });

@@ -41,7 +41,12 @@ export function App() {
         <h1>needajob</h1>
         <p className="tagline">Entry-level tech jobs only.</p>
       </header>
-      <SearchForm params={params} onChange={setParams} />
+      <SearchForm
+        params={params}
+        locations={result?.locations ?? []}
+        countryName={country?.name ?? "the country"}
+        onChange={setParams}
+      />
       <main>
         {error && <p role="alert">{error}</p>}
         {!error && !result && <p aria-busy="true">Loading jobs…</p>}

@@ -24,8 +24,14 @@ app.get("/api/jobs", async (c) => {
     return c.json({ error: `Unknown discipline: ${unknown.join(", ")}` }, 400);
   }
 
+  const region = c.req.query("region") || undefined;
+  const county = c.req.query("county") || undefined;
+  if (county && !region) {
+    return c.json({ error: "county requires region" }, 400);
+  }
+
   const pool = await readPool(c.env.JOB_POOLS, country);
-  return c.json(search(pool, { country, page, disciplines: disciplines as DisciplineSlug[] }));
+  return c.json(search(pool, { country, page, disciplines: disciplines as DisciplineSlug[], region, county }));
 });
 
 export default {

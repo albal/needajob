@@ -51,4 +51,27 @@ describe("GET /api/jobs", () => {
   it("rejects an unknown Discipline", async () => {
     expect((await getJobs("?discipline=devops&discipline=wizard")).status).toBe(400);
   });
+
+  it("filters by Location and offers the Pool's places", async () => {
+    stubAdzuna(() => [
+      adzunaResult({ id: "hants", location: { display_name: "Winchester", area: ["UK", "South East England", "Hampshire", "Winchester"] } }),
+      adzunaResult({ id: "surrey", location: { display_name: "Guildford", area: ["UK", "South East England", "Surrey", "Guildford"] } }),
+      adzunaResult({ id: "leeds", location: { display_name: "Leeds", area: ["UK", "Yorkshire And The Humber", "West Yorkshire", "Leeds"] } }),
+    ]);
+    await runHarvest();
+
+    const region = await getJobs("?region=South%20East%20England");
+    expect(region.body.jobs.map((j) => j.id).sort()).toEqual(["hants", "surrey"]);
+    expect(region.body.locations).toEqual([
+      { region: "South East England", counties: ["Hampshire", "Surrey"] },
+      { region: "Yorkshire And The Humber", counties: ["West Yorkshire"] },
+    ]);
+
+    const county = await getJobs("?region=South%20East%20England&county=Surrey");
+    expect(county.body.jobs.map((j) => j.id)).toEqual(["surrey"]);
+  });
+
+  it("rejects a county without a region", async () => {
+    expect((await getJobs("?county=Surrey")).status).toBe(400);
+  });
 });
