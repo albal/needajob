@@ -44,6 +44,12 @@ body {
   font-size: 1.75rem;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .tagline {
   margin: 0.25rem 0 1rem;
   color: var(--muted);

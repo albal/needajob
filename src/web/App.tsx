@@ -32,7 +32,10 @@ export function App() {
   return (
     <div className="page">
       <header className="header">
-        <h1>needajob</h1>
+        <h1 className="brand">
+          <img src="/favicon.svg" alt="" width="32" height="32" />
+          needajob
+        </h1>
         <p className="tagline">Entry-level tech jobs only.</p>
         <nav className="views" aria-label="Views">
           <button type="button" className="toggle" aria-pressed={!showSaved} onClick={() => setView(false)}>
