@@ -17,7 +17,7 @@ A word or phrase in a Job title that signals it is meant for beginners, e.g. Jun
 _Avoid_: Modifier, junior keyword
 
 **Seniority Marker**:
-A word or phrase in a Job title that signals it is not entry-level, e.g. Senior, Lead, Principal, Staff, Head, Manager, Director, Architect, II, III. Has local-language equivalents. Its presence disqualifies a Job even when an Entry-Level Marker is also present.
+A word or phrase in a Job title that signals it is not entry-level, e.g. Senior, Lead, Principal, Staff, Head, Manager, Director, Architect, II, III. Has local-language equivalents. Its presence disqualifies a Job even when an Entry-Level Marker is also present, unless it is part of a Discipline Term (the "Manager" in "Project Manager").
 
 ## Searching
 

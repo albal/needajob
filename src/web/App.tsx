@@ -1,16 +1,37 @@
 import { useEffect, useState } from "react";
+import { findCountry } from "../core/countries";
 import type { JobsResponse } from "../core/types";
 import { fetchJobs } from "./api";
+import { JobCard } from "./JobCard";
+import { useUrlParams } from "./useUrlParams";
 
 export function App() {
+  const [params, setParams] = useUrlParams();
   const [result, setResult] = useState<JobsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const query = params.toString();
 
   useEffect(() => {
-    fetchJobs(new URLSearchParams())
-      .then(setResult)
-      .catch((e: Error) => setError(e.message));
-  }, []);
+    let current = true;
+    setError(null);
+    fetchJobs(new URLSearchParams(query))
+      .then((r) => current && setResult(r))
+      .catch((e: Error) => current && setError(e.message));
+    return () => {
+      current = false;
+    };
+  }, [query]);
+
+  const goToPage = (page: number) => {
+    const next = new URLSearchParams(params);
+    if (page === 1) next.delete("page");
+    else next.set("page", String(page));
+    setParams(next);
+    window.scrollTo?.({ top: 0 });
+  };
+
+  const country = result && findCountry(result.country);
+  const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
 
   return (
     <div className="page">
@@ -27,6 +48,29 @@ export function App() {
               ? "No jobs yet — check back soon."
               : "No entry-level jobs match this search."}
           </p>
+        )}
+        {result && country && result.total > 0 && (
+          <>
+            <p className="total">
+              {result.total} entry-level job{result.total === 1 ? "" : "s"}
+            </p>
+            <div className="results">
+              {result.jobs.map((job) => (
+                <JobCard key={job.id} job={job} country={country} />
+              ))}
+            </div>
+            <nav className="pagination" aria-label="Pagination">
+              <button type="button" disabled={result.page <= 1} onClick={() => goToPage(result.page - 1)}>
+                Previous
+              </button>
+              <span>
+                Page {result.page} of {pages}
+              </span>
+              <button type="button" disabled={result.page >= pages} onClick={() => goToPage(result.page + 1)}>
+                Next
+              </button>
+            </nav>
+          </>
         )}
       </main>
     </div>

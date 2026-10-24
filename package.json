@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"wrangler dev\" \"vite\"",
+    "dev": "concurrently -k \"wrangler dev --test-scheduled\" \"vite\"",
     "build": "vite build",
     "deploy": "vite build && wrangler deploy",
     "test": "vitest run",

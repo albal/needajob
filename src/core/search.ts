@@ -9,7 +9,7 @@ export interface SearchQuery {
 
 /** Answers a Search from a Country's Job Pool (or its absence). */
 export function search(pool: JobPool | null, query: SearchQuery): JobsResponse {
-  const jobs = pool?.jobs ?? [];
+  const jobs = [...(pool?.jobs ?? [])].sort((a, b) => b.created.localeCompare(a.created));
   const start = (query.page - 1) * PAGE_SIZE;
   return {
     country: query.country,
