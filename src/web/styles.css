@@ -223,3 +223,14 @@ body {
   font: inherit;
   font-weight: 400;
 }
+
+.fields {
+  display: grid;
+  gap: 0 0.75rem;
+}
+
+@media (min-width: 36rem) {
+  .fields {
+    grid-template-columns: 1fr 2fr;
+  }
+}

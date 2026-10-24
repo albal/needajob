@@ -8,7 +8,7 @@ describe("Harvest", () => {
 
     await runHarvest();
 
-    expect(calls.map((u) => u.pathname)).toEqual([
+    expect(calls.map((u) => u.pathname).filter((p) => p.includes("/gb/"))).toEqual([
       "/v1/api/jobs/gb/search/1",
       "/v1/api/jobs/gb/search/2",
       "/v1/api/jobs/gb/search/3",
@@ -25,7 +25,24 @@ describe("Harvest", () => {
   it("stops early when Adzuna runs out of results", async () => {
     const calls = stubAdzuna(() => [adzunaResult()]);
     await runHarvest();
-    expect(calls).toHaveLength(1);
+    expect(calls.filter((u) => u.pathname.includes("/gb/"))).toHaveLength(1);
+  });
+
+  it("Harvests every Country once every 6 hours, a few per hourly run", async () => {
+    const calls = stubAdzuna(() => Array.from({ length: 50 }, () => adzunaResult()));
+    const perRun: number[] = [];
+    for (let hour = 0; hour < 6; hour++) {
+      const before = calls.length;
+      await runHarvest(new Date(Date.UTC(2026, 9, 21, hour)));
+      perRun.push(calls.length - before);
+    }
+
+    const countries = calls.map((u) => u.pathname.split("/")[4]);
+    expect(new Set(countries).size).toBe(19);
+    // gb and us get 3 pages, the other 17 Countries 1: 23 calls in 6 hours.
+    expect(calls).toHaveLength(23);
+    expect(Math.max(...perRun)).toBeLessThan(50);
+    expect(countries.filter((c) => c === "us")).toHaveLength(3);
   });
 
   it("keeps only Entry-Level Jobs that match a Discipline, tagged with their Disciplines", async () => {

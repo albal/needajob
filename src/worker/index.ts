@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { findCountry } from "../core/countries";
 import { search } from "../core/search";
 import type { DisciplineSlug } from "../core/types";
 import { DISCIPLINES } from "../core/word-lists";
@@ -9,8 +10,19 @@ const app = new Hono<{ Bindings: Env }>();
 
 const isDiscipline = (s: string): s is DisciplineSlug => DISCIPLINES.some((d) => d.slug === s);
 
+/** The visitor's Country as detected by Cloudflare, if Adzuna covers it; otherwise gb. */
+function defaultCountry(request: Request): string {
+  const detected = String(request.cf?.country ?? "").toLowerCase();
+  // Adzuna, like most of the web, calls the UK "gb".
+  return findCountry(detected)?.code ?? "gb";
+}
+
 app.get("/api/jobs", async (c) => {
-  const country = "gb";
+  const countryParam = c.req.query("country");
+  if (countryParam !== undefined && !findCountry(countryParam)) {
+    return c.json({ error: `Unsupported country: ${countryParam}` }, 400);
+  }
+  const country = countryParam ?? defaultCountry(c.req.raw);
 
   const pageParam = c.req.query("page") ?? "1";
   const page = Number(pageParam);
@@ -36,7 +48,7 @@ app.get("/api/jobs", async (c) => {
 
 export default {
   fetch: app.fetch,
-  async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(harvest(env));
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(harvest(env, new Date(controller.scheduledTime)));
   },
 } satisfies ExportedHandler<Env>;

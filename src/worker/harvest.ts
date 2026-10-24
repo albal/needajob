@@ -1,14 +1,27 @@
 import { classifyTitle } from "../core/classify";
+import { COUNTRIES } from "../core/countries";
 import type { Job } from "../core/types";
 import { WORD_LISTS, languagesFor } from "../core/word-lists";
 import { plainText, searchAdzuna, toJob } from "./adzuna";
 import { readPool, writePool } from "./pool-store";
 
-/** Adzuna pages fetched per Harvest for each Country. */
-export const HARVEST_PAGES: Record<string, number> = { gb: 3 };
+/** Adzuna pages fetched per Harvest; high-volume Countries get more. */
+export const HARVEST_PAGES: Record<string, number> = { gb: 3, us: 3 };
+
+/**
+ * The hourly cron Harvests one of this many groups of Countries per run, so
+ * each Country is Harvested every 6 hours while each run stays small enough
+ * for the free plan's CPU and subrequest limits.
+ */
+export const HARVEST_GROUPS = 6;
 
 /** Jobs whose advert is older than this are dropped from the Job Pool. */
 export const MAX_AGE_DAYS = 30;
+
+export function countriesDueAt(time: Date): string[] {
+  const group = time.getUTCHours() % HARVEST_GROUPS;
+  return COUNTRIES.filter((_, i) => i % HARVEST_GROUPS === group).map((c) => c.code);
+}
 
 async function fetchEntryLevelJobs(env: Env, country: string): Promise<Job[]> {
   const whatOr = [...new Set(languagesFor(country).flatMap((l) => WORD_LISTS[l].harvestWords))];
@@ -48,8 +61,9 @@ export async function harvestCountry(env: Env, country: string, now: Date): Prom
   await writePool(env.JOB_POOLS, { country, updatedAt: now.toISOString(), jobs });
 }
 
-export async function harvest(env: Env, now = new Date()): Promise<void> {
-  for (const country of Object.keys(HARVEST_PAGES)) {
+/** Harvests the Countries due at `now`. */
+export async function harvest(env: Env, now: Date): Promise<void> {
+  for (const country of countriesDueAt(now)) {
     await harvestCountry(env, country, now);
   }
 }

@@ -74,4 +74,27 @@ describe("GET /api/jobs", () => {
   it("rejects a county without a region", async () => {
     expect((await getJobs("?county=Surrey")).status).toBe(400);
   });
+
+  it("answers from the chosen Country's Job Pool", async () => {
+    stubAdzuna((country) => [adzunaResult({ id: `${country}-job` })]);
+    // 02:00 UTC is when de's group is due.
+    await runHarvest(new Date("2026-10-21T02:00:00Z"));
+
+    const { body } = await getJobs("?country=de");
+    expect(body.country).toBe("de");
+    expect(body.jobs.map((j) => j.id)).toEqual(["de-job"]);
+  });
+
+  it.each([
+    ["DE", "de"],
+    ["GB", "gb"],
+    ["JP", "gb"],
+    [undefined, "gb"],
+  ])("defaults a visitor from %s to %s", async (visitor, expected) => {
+    expect((await getJobs("", visitor)).body.country).toBe(expected);
+  });
+
+  it("rejects an unsupported Country", async () => {
+    expect((await getJobs("?country=jp")).status).toBe(400);
+  });
 });

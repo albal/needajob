@@ -37,15 +37,16 @@ export function stubAdzuna(respond: Responder): URL[] {
   return calls;
 }
 
-export async function runHarvest(now?: Date): Promise<void> {
-  if (now) vi.useFakeTimers({ now, toFake: ["Date"] });
+/** Runs the hourly cron; by default at an hour when gb is due. */
+export async function runHarvest(now = new Date("2026-10-21T00:00:00Z")): Promise<void> {
   const ctx = createExecutionContext();
-  await worker.scheduled(createScheduledController({ cron: "0 */6 * * *" }), env, ctx);
+  await worker.scheduled(createScheduledController({ cron: "0 * * * *", scheduledTime: now.getTime() }), env, ctx);
   await waitOnExecutionContext(ctx);
-  if (now) vi.useRealTimers();
 }
 
-export async function getJobs(query = ""): Promise<{ status: number; body: JobsResponse }> {
-  const res = await exports.default.fetch(`https://needajob.test/api/jobs${query}`);
+export async function getJobs(query = "", visitorCountry?: string): Promise<{ status: number; body: JobsResponse }> {
+  const res = await exports.default.fetch(`https://needajob.test/api/jobs${query}`, {
+    cf: visitorCountry ? { country: visitorCountry } : undefined,
+  });
   return { status: res.status, body: await res.json() };
 }

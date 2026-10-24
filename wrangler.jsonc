@@ -11,6 +11,6 @@
   },
   // Omitting the id lets `wrangler deploy` provision the namespace.
   "kv_namespaces": [{ "binding": "JOB_POOLS" }],
-  "triggers": { "crons": ["0 */6 * * *"] },
+  "triggers": { "crons": ["0 * * * *"] },
   "observability": { "enabled": true }
 }

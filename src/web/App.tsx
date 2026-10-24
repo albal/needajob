@@ -5,13 +5,27 @@ import { fetchJobs } from "./api";
 import { timeAgo } from "./format";
 import { JobCard } from "./JobCard";
 import { SearchForm } from "./SearchForm";
+import { readStored, writeStored } from "./storage";
 import { useUrlParams } from "./useUrlParams";
 
+const COUNTRY_KEY = "needajob:country";
+
 export function App() {
-  const [params, setParams] = useUrlParams();
+  const [params, setUrlParams] = useUrlParams();
   const [result, setResult] = useState<JobsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const query = params.toString();
+
+  // The URL wins; then the Country last chosen on this device; then the Worker's default.
+  const apiParams = new URLSearchParams(params);
+  const stored = readStored<string>(COUNTRY_KEY);
+  if (!apiParams.has("country") && stored && findCountry(stored)) apiParams.set("country", stored);
+  const query = apiParams.toString();
+
+  const setParams = (next: URLSearchParams) => {
+    const chosen = next.get("country");
+    if (chosen) writeStored(COUNTRY_KEY, chosen);
+    setUrlParams(next);
+  };
 
   useEffect(() => {
     let current = true;
@@ -44,6 +58,7 @@ export function App() {
       <SearchForm
         params={params}
         locations={result?.locations ?? []}
+        country={apiParams.get("country") ?? result?.country ?? "gb"}
         countryName={country?.name ?? "the country"}
         onChange={setParams}
       />

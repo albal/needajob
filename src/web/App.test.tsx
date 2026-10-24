@@ -1,10 +1,13 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { emptyResponse, job, pagedResponder, stubApi } from "./test-utils";
 
-beforeEach(() => window.history.replaceState(null, "", "/"));
+beforeEach(() => {
+  window.history.replaceState(null, "", "/");
+  window.localStorage.clear();
+});
 
 describe("App", () => {
   it("shows a no-jobs-yet state before the first Harvest", async () => {
@@ -141,5 +144,47 @@ describe("App", () => {
 
     await user.selectOptions(select, screen.getByRole("option", { name: "Anywhere in United Kingdom" }));
     expect(window.location.search).toBe("");
+  });
+
+  it("switches Country, keeping Disciplines but dropping the Location, and remembers it", async () => {
+    window.history.replaceState(null, "", "/?region=London&discipline=sre&page=3");
+    const api = stubApi((url) => emptyResponse({ country: url.searchParams.get("country") ?? "gb", updatedAt: new Date().toISOString() }));
+    const user = userEvent.setup();
+    const { unmount } = render(<App />);
+    const select = await screen.findByRole("combobox", { name: "Country" });
+    expect(select).toHaveValue("gb");
+
+    await user.selectOptions(select, "de");
+    expect(window.location.search).toBe("?country=de&discipline=sre");
+    expect(await screen.findByRole("option", { name: "Anywhere in Germany" })).toBeInTheDocument();
+
+    // A later visit without a Country in the URL uses the remembered one.
+    unmount();
+    window.history.replaceState(null, "", "/");
+    render(<App />);
+    expect(await screen.findByRole("combobox", { name: "Country" })).toHaveValue("de");
+    expect(String(api.mock.lastCall![0])).toBe("/api/jobs?country=de");
+  });
+
+  it("uses the Worker's default Country when nothing is chosen or remembered", async () => {
+    const api = stubApi(() => emptyResponse({ country: "au", updatedAt: new Date().toISOString() }));
+    render(<App />);
+    expect(await screen.findByRole("option", { name: "Anywhere in Australia" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Country" })).toHaveValue("au");
+    expect(String(api.mock.lastCall![0])).toBe("/api/jobs");
+  });
+
+  it("still works when browser storage is unavailable", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    stubApi(() => emptyResponse({ updatedAt: new Date().toISOString() }));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.selectOptions(await screen.findByRole("combobox", { name: "Country" }), "fr");
+    expect(window.location.search).toBe("?country=fr");
   });
 });

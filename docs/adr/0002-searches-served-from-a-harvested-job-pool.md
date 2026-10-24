@@ -9,3 +9,4 @@ The PRD had the Worker proxy each Search to Adzuna live. Adzuna's free tier allo
 - Adzuna's `what` has no boolean OR, so the PRD's `"Junior SRE" OR ...` query construction is not used; precision comes from our own title filtering.
 - Each Country's Job Pool is stored as a single compact Workers KV value, keeping Harvest writes far inside KV's free-tier limit; D1 stays reserved for post-MVP accounts. If a large Country's Pool pushes Search past the free-tier CPU limit, split it by region rather than moving to D1.
 - A failed Harvest leaves the previous Job Pool in place, and the UI shows when Jobs were last updated.
+- The cron runs hourly and Harvests one sixth of the Countries each run, so every Country is still Harvested every 6 hours but no single run approaches the free plan's 10ms CPU or 50-subrequest limits.

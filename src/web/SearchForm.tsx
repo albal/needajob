@@ -1,3 +1,4 @@
+import { COUNTRIES } from "../core/countries";
 import type { LocationOption } from "../core/types";
 import { DISCIPLINES } from "../core/word-lists";
 
@@ -5,6 +6,7 @@ interface Props {
   params: URLSearchParams;
   /** Places with Jobs in the current Job Pool. */
   locations: LocationOption[];
+  country: string;
   countryName: string;
   /** Called with the new Search; any page is dropped so results restart at page 1. */
   onChange: (next: URLSearchParams) => void;
@@ -12,7 +14,7 @@ interface Props {
 
 const SEP = "\t";
 
-export function SearchForm({ params, locations, countryName, onChange }: Props) {
+export function SearchForm({ params, locations, country, countryName, onChange }: Props) {
   const selected = new Set(params.getAll("discipline"));
   const region = params.get("region") ?? "";
   const county = params.get("county") ?? "";
@@ -21,6 +23,13 @@ export function SearchForm({ params, locations, countryName, onChange }: Props) 
   const options = locations.some((l) => l.region === region) || !region
     ? locations
     : [...locations, { region, counties: county ? [county] : [] }];
+
+  const chooseCountry = (code: string) => {
+    const next = new URLSearchParams();
+    next.set("country", code);
+    for (const d of params.getAll("discipline")) next.append("discipline", d);
+    onChange(next);
+  };
 
   const chooseLocation = (value: string) => {
     const [r = "", c = ""] = value.split(SEP);
@@ -51,22 +60,34 @@ export function SearchForm({ params, locations, countryName, onChange }: Props) 
 
   return (
     <form className="search" onSubmit={(e) => e.preventDefault()} aria-label="Search">
-      <label className="field">
-        <span>Location</span>
-        <select value={region ? `${region}${SEP}${county}` : ""} onChange={(e) => chooseLocation(e.target.value)}>
-          <option value="">Anywhere in {countryName}</option>
-          {options.map((l) => (
-            <optgroup key={l.region} label={l.region}>
-              <option value={`${l.region}${SEP}`}>All of {l.region}</option>
-              {l.counties.map((c) => (
-                <option key={c} value={`${l.region}${SEP}${c}`}>
-                  {c}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </label>
+      <div className="fields">
+        <label className="field">
+          <span>Country</span>
+          <select value={country} onChange={(e) => chooseCountry(e.target.value)}>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Location</span>
+          <select value={region ? `${region}${SEP}${county}` : ""} onChange={(e) => chooseLocation(e.target.value)}>
+            <option value="">Anywhere in {countryName}</option>
+            {options.map((l) => (
+              <optgroup key={l.region} label={l.region}>
+                <option value={`${l.region}${SEP}`}>All of {l.region}</option>
+                {l.counties.map((c) => (
+                  <option key={c} value={`${l.region}${SEP}${c}`}>
+                    {c}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+      </div>
       <fieldset className="disciplines">
         <legend>Disciplines</legend>
         <div className="toggles">

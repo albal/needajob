@@ -86,13 +86,13 @@ One Cloudflare Worker serves both the static frontend assets and the `/api/*` ro
 
 Adzuna's free tier allows about 250 calls a day. That is far too few to proxy Searches live across all combinations of Country, Location and Disciplines, so Searches never call Adzuna. Instead:
 
-* **Harvest:** A Cron Trigger runs every 6 hours. For each Country it calls Adzuna `/v1/api/jobs/{country}/search/{page}` with:
+* **Harvest:** A Cron Trigger runs hourly and Harvests a sixth of the Countries each run, so each Country is Harvested every 6 hours. For each Country it calls Adzuna `/v1/api/jobs/{country}/search/{page}` with:
   * `category=it-jobs`
   * `what_or` = single-word Entry-Level Markers
   * `sort_by=date`
   * `results_per_page=50`
 
-  Page budget: 3 pages each for gb and us, and 1 page for every other Country. That is about 23 calls per run and about 92 a day.
+  Page budget: 3 pages each for gb and us, and 1 page for every other Country. That is 23 calls per 6 hours (at most 6 per hourly run) and about 92 a day.
 * **Filtering at Harvest time:** Results go through the Entry-Level Job title rules. Each Job is tagged with the Disciplines it matches.
 * **Merging:** New Jobs are merged into the Country's Job Pool by Adzuna id. Jobs older than 30 days are dropped.
 * **Storage:** One compact Workers KV value per Country, holding only the fields cards need, with the description trimmed to about 200 characters. If a large Country's Pool brings Search close to the free tier's 10ms CPU limit, the Pool is split by region rather than moved to D1.
@@ -111,7 +111,7 @@ Entry-Level Markers, Seniority Markers and Discipline Terms for all languages li
 | Resource | Limit | Expected use |
 | --- | --- | --- |
 | Adzuna API | ~250 calls/day (confirm on account dashboard) | ~92/day |
-| Worker subrequests | 50 per invocation | ~23 per Harvest |
+| Worker subrequests | 50 per invocation | ≤6 per hourly Harvest |
 | Workers KV writes | 1,000/day | 76/day (19 Countries × 4 Harvests) |
 | Workers KV reads | 100,000/day | 1 per Search |
 | Worker requests | 100,000/day | Ample for MVP |
