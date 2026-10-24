@@ -95,4 +95,23 @@ describe("App", () => {
     expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Junior Developer 21" })).toBeInTheDocument();
   });
+
+  it("narrows to chosen Disciplines, in the URL, restarting at page 1", async () => {
+    window.history.replaceState(null, "", "/?page=2");
+    const api = stubApi(() => emptyResponse({ updatedAt: new Date().toISOString() }));
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText(/no entry-level jobs match/i);
+
+    await user.click(screen.getByRole("button", { name: "DevOps Engineer" }));
+    await user.click(screen.getByRole("button", { name: "SRE" }));
+
+    expect(window.location.search).toBe("?discipline=devops&discipline=sre");
+    expect(screen.getByRole("button", { name: "DevOps Engineer" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "false");
+    expect(String(api.mock.lastCall![0])).toBe("/api/jobs?discipline=devops&discipline=sre");
+
+    await user.click(screen.getByRole("button", { name: "All" }));
+    expect(window.location.search).toBe("");
+  });
 });

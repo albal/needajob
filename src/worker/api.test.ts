@@ -34,4 +34,21 @@ describe("GET /api/jobs", () => {
   it.each(["0", "-1", "abc", "1.5"])("rejects page=%s", async (page) => {
     expect((await getJobs(`?page=${page}`)).status).toBe(400);
   });
+
+  it("filters by any of several Disciplines", async () => {
+    stubAdzuna(() => [
+      adzunaResult({ id: "devops", title: "Junior DevOps Engineer" }),
+      adzunaResult({ id: "sre", title: "Graduate SRE" }),
+      adzunaResult({ id: "frontend", title: "Junior Frontend Engineer" }),
+    ]);
+    await runHarvest();
+
+    const { body } = await getJobs("?discipline=devops&discipline=sre");
+    expect(body.jobs.map((j) => j.id).sort()).toEqual(["devops", "sre"]);
+    expect(body.total).toBe(2);
+  });
+
+  it("rejects an unknown Discipline", async () => {
+    expect((await getJobs("?discipline=devops&discipline=wizard")).status).toBe(400);
+  });
 });

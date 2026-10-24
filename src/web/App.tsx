@@ -4,6 +4,7 @@ import type { JobsResponse } from "../core/types";
 import { fetchJobs } from "./api";
 import { timeAgo } from "./format";
 import { JobCard } from "./JobCard";
+import { SearchForm } from "./SearchForm";
 import { useUrlParams } from "./useUrlParams";
 
 export function App() {
@@ -40,6 +41,7 @@ export function App() {
         <h1>needajob</h1>
         <p className="tagline">Entry-level tech jobs only.</p>
       </header>
+      <SearchForm params={params} onChange={setParams} />
       <main>
         {error && <p role="alert">{error}</p>}
         {!error && !result && <p aria-busy="true">Loading jobs…</p>}

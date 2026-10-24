@@ -165,3 +165,42 @@ body {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+.search {
+  margin-bottom: 1rem;
+}
+
+.search fieldset {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.search legend {
+  margin-bottom: 0.375rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.toggle {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
