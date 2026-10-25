@@ -77,8 +77,8 @@ describe("GET /api/jobs", () => {
 
   it("answers from the chosen Country's Job Pool", async () => {
     stubAdzuna((country) => [adzunaResult({ id: `${country}-job` })]);
-    // 02:00 UTC is when de's group is due.
-    await runHarvest(new Date("2026-10-21T02:00:00Z"));
+    // 08:00 UTC is when de's group is due.
+    await runHarvest(new Date("2026-10-21T08:00:00Z"));
 
     const { body } = await getJobs("?country=de");
     expect(body.country).toBe("de");

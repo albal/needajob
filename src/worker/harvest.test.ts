@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { adzunaResult, getJobs, runHarvest, stubAdzuna } from "./test-helpers";
 
 describe("Harvest", () => {
-  it("asks Adzuna for gb's newest IT Entry-Level Jobs, three pages of 50", async () => {
+  it("asks Adzuna for gb's newest IT Entry-Level Jobs, two pages of 50", async () => {
     const full = () => Array.from({ length: 50 }, () => adzunaResult());
     const calls = stubAdzuna(() => full());
 
@@ -11,7 +11,6 @@ describe("Harvest", () => {
     expect(calls.map((u) => u.pathname).filter((p) => p.includes("/gb/"))).toEqual([
       "/v1/api/jobs/gb/search/1",
       "/v1/api/jobs/gb/search/2",
-      "/v1/api/jobs/gb/search/3",
     ]);
     const params = calls[0]!.searchParams;
     expect(params.get("app_id")).toBe("test-id");
@@ -28,10 +27,10 @@ describe("Harvest", () => {
     expect(calls.filter((u) => u.pathname.includes("/gb/"))).toHaveLength(1);
   });
 
-  it("Harvests every Country once every 6 hours, a few per hourly run", async () => {
+  it("Harvests every Country once every 12 hours, a few per hourly run", async () => {
     const calls = stubAdzuna(() => Array.from({ length: 50 }, () => adzunaResult()));
     const perRun: number[] = [];
-    for (let hour = 0; hour < 6; hour++) {
+    for (let hour = 0; hour < 12; hour++) {
       const before = calls.length;
       await runHarvest(new Date(Date.UTC(2026, 9, 21, hour)));
       perRun.push(calls.length - before);
@@ -39,10 +38,10 @@ describe("Harvest", () => {
 
     const countries = calls.map((u) => u.pathname.split("/")[4]);
     expect(new Set(countries).size).toBe(19);
-    // gb and us get 3 pages, the other 17 Countries 1: 23 calls in 6 hours.
-    expect(calls).toHaveLength(23);
-    expect(Math.max(...perRun)).toBeLessThan(50);
-    expect(countries.filter((c) => c === "us")).toHaveLength(3);
+    // gb and us get 2 pages, the other 17 Countries 1: 21 calls in 12 hours.
+    expect(calls).toHaveLength(21);
+    expect(Math.max(...perRun)).toBeLessThanOrEqual(3);
+    expect(countries.filter((c) => c === "us")).toHaveLength(2);
   });
 
   it("keeps only Entry-Level Jobs that match a Discipline, tagged with their Disciplines", async () => {
@@ -96,8 +95,8 @@ describe("Harvest", () => {
 
   it("asks Adzuna for local-language Entry-Level Markers too", async () => {
     const calls = stubAdzuna(() => []);
-    // 02:00 UTC is when de's group is due; 04:00 is be's.
-    await runHarvest(new Date("2026-10-21T02:00:00Z"));
+    // 08:00 UTC is when de's group is due; 04:00 is be's.
+    await runHarvest(new Date("2026-10-21T08:00:00Z"));
     await runHarvest(new Date("2026-10-21T04:00:00Z"));
 
     const whatOr = (country: string) =>
@@ -111,7 +110,7 @@ describe("Harvest", () => {
     stubAdzuna((country) =>
       country === "de" ? [adzunaResult({ id: "ws", title: "Werkstudent DevOps (m/w/d)" })] : [],
     );
-    await runHarvest(new Date("2026-10-21T02:00:00Z"));
+    await runHarvest(new Date("2026-10-21T08:00:00Z"));
     expect((await getJobs("?country=de")).body.jobs.map((j) => [j.id, j.disciplines])).toEqual([["ws", ["devops"]]]);
   });
 });

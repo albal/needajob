@@ -10,7 +10,7 @@ describe("Harvest merging", () => {
 
     vi.restoreAllMocks();
     stubAdzuna(() => [adzunaResult({ id: "b", created: "2026-10-21T00:00:00Z" })]);
-    await runHarvest(at("2026-10-21T06:00:00Z"));
+    await runHarvest(at("2026-10-21T12:00:00Z"));
 
     expect((await getJobs()).body.jobs.map((j) => j.id)).toEqual(["b", "a"]);
   });
@@ -21,7 +21,7 @@ describe("Harvest merging", () => {
 
     vi.restoreAllMocks();
     stubAdzuna(() => [adzunaResult({ id: "a", company: { display_name: "New Name" } })]);
-    await runHarvest(at("2026-10-21T06:00:00Z"));
+    await runHarvest(at("2026-10-21T12:00:00Z"));
 
     const { body } = await getJobs();
     expect(body.total).toBe(1);
@@ -33,7 +33,7 @@ describe("Harvest merging", () => {
       adzunaResult({ id: "fresh", created: "2026-10-01T00:00:00Z" }),
       adzunaResult({ id: "stale", created: "2026-09-20T00:00:00Z" }),
     ]);
-    await runHarvest(at("2026-10-01T06:00:00Z"));
+    await runHarvest(at("2026-10-01T12:00:00Z"));
     expect((await getJobs()).body.total).toBe(2);
 
     vi.restoreAllMocks();
@@ -44,8 +44,8 @@ describe("Harvest merging", () => {
 
   it("records when the Job Pool was last updated", async () => {
     stubAdzuna(() => [adzunaResult()]);
-    await runHarvest(at("2026-10-21T06:00:00Z"));
-    expect((await getJobs()).body.updatedAt).toBe("2026-10-21T06:00:00.000Z");
+    await runHarvest(at("2026-10-21T12:00:00Z"));
+    expect((await getJobs()).body.updatedAt).toBe("2026-10-21T12:00:00.000Z");
   });
 });
 
@@ -61,7 +61,7 @@ describe("Harvest failures", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     // The first page succeeds and a later one fails: nothing partial is written.
     stubAdzuna((_country, page) => (page === 1 ? Array.from({ length: 50 }, () => adzunaResult()) : fail()));
-    await runHarvest(at("2026-10-21T06:00:00Z"));
+    await runHarvest(at("2026-10-21T12:00:00Z"));
 
     const { body } = await getJobs();
     expect(body.jobs.map((j) => j.id)).toEqual(["a"]);

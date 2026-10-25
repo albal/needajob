@@ -84,21 +84,21 @@ One Cloudflare Worker serves both the static frontend assets and the `/api/*` ro
 
 ### 5.2. Job Pool & Harvest ([ADR 0002](docs/adr/0002-searches-served-from-a-harvested-job-pool.md))
 
-Adzuna's free tier allows about 250 calls a day. That is far too few to proxy Searches live across all combinations of Country, Location and Disciplines, so Searches never call Adzuna. Instead:
+Adzuna's free tier allows 250 calls a day and 2,500 a month, and the key is shared with jobscout (about 24 calls a day). That is far too few to proxy Searches live across all combinations of Country, Location and Disciplines, so Searches never call Adzuna. Instead:
 
-* **Harvest:** A Cron Trigger runs hourly and Harvests a sixth of the Countries each run, so each Country is Harvested every 6 hours. For each Country it calls Adzuna `/v1/api/jobs/{country}/search/{page}` with:
+* **Harvest:** A Cron Trigger runs hourly and Harvests a twelfth of the Countries each run, so each Country is Harvested every 12 hours. For each Country it calls Adzuna `/v1/api/jobs/{country}/search/{page}` with:
   * `category=it-jobs`
   * `what_or` = single-word Entry-Level Markers
   * `sort_by=date`
   * `results_per_page=50`
 
-  Page budget: 3 pages each for gb and us, and 1 page for every other Country. That is 23 calls per 6 hours (at most 6 per hourly run) and about 92 a day.
+  Page budget: 2 pages each for gb and us, and 1 page for every other Country. That is 21 calls per 12 hours (at most 3 per hourly run), about 42 a day and about 1,300 a month. With jobscout's share the key stays around 2,050 a month, under the 2,500 limit.
 * **Filtering at Harvest time:** Results go through the Entry-Level Job title rules. Each Job is tagged with the Disciplines it matches.
 * **Merging:** New Jobs are merged into the Country's Job Pool by Adzuna id. Jobs older than 30 days are dropped.
 * **Storage:** One compact Workers KV value per Country, holding only the fields cards need, with the description trimmed to about 200 characters. If a large Country's Pool brings Search close to the free tier's 10ms CPU limit, the Pool is split by region rather than moved to D1.
 * **Failure handling:** If a Harvest fails (Adzuna errors, 429s or quota exhausted), the previous Job Pool stays as it is and the next scheduled run tries again. Failures are logged, with no alerting in the MVP.
 * **Search:** `/api/jobs` reads the Country's Job Pool from KV, then filters by Location and Disciplines, sorts and paginates in memory. It also returns the Location options and the Pool's last-updated time.
-* **Coverage trade-offs we accept:** Results can be up to a few hours old. High-volume Countries may be only partly harvested. Tech Project Manager and UI Developer Jobs outside Adzuna's `it-jobs` category are missed.
+* **Coverage trade-offs we accept:** Results can be up to 12 hours old. High-volume Countries may be only partly harvested. Tech Project Manager and UI Developer Jobs outside Adzuna's `it-jobs` category are missed.
 
 Adzuna's `what` parameter has no boolean OR. All precision therefore comes from our own title rules, not from query construction.
 
@@ -110,9 +110,9 @@ Entry-Level Markers, Seniority Markers and Discipline Terms for all languages li
 
 | Resource | Limit | Expected use |
 | --- | --- | --- |
-| Adzuna API | ~250 calls/day (confirm on account dashboard) | ~92/day |
-| Worker subrequests | 50 per invocation | ≤6 per hourly Harvest |
-| Workers KV writes | 1,000/day | 76/day (19 Countries × 4 Harvests) |
+| Adzuna API | 250 calls/day, 2,500/month, shared with jobscout | ~42/day, ~1,300/month |
+| Worker subrequests | 50 per invocation | ≤3 per hourly Harvest |
+| Workers KV writes | 1,000/day | 38/day (19 Countries × 2 Harvests) |
 | Workers KV reads | 100,000/day | 1 per Search |
 | Worker requests | 100,000/day | Ample for MVP |
 | Worker CPU | 10 ms per invocation | Keep Job Pools compact |
@@ -156,7 +156,6 @@ Entry-Level Markers, Seniority Markers and Discipline Terms for all languages li
 
 ## 11. Open Items to Verify With a Real Adzuna Key
 
-* The actual quota on the account dashboard.
 * The `results_per_page` maximum (assumed 50).
 * How `what_or` combines with `category`, and whether `sort_by=date` behaves as expected.
 * Whether `redirect_url`s for expired adverts still resolve.

@@ -6,14 +6,15 @@ import { plainText, searchAdzuna, toJob } from "./adzuna";
 import { readPool, writePool } from "./pool-store";
 
 /** Adzuna pages fetched per Harvest; high-volume Countries get more. */
-export const HARVEST_PAGES: Record<string, number> = { gb: 3, us: 3 };
+export const HARVEST_PAGES: Record<string, number> = { gb: 2, us: 2 };
 
 /**
  * The hourly cron Harvests one of this many groups of Countries per run, so
- * each Country is Harvested every 6 hours while each run stays small enough
- * for the free plan's CPU and subrequest limits.
+ * each Country is Harvested every 12 hours. That keeps Adzuna use to about
+ * 42 calls a day, inside the 2,500-a-month key we share with jobscout, and
+ * each run small enough for the free plan's CPU and subrequest limits.
  */
-export const HARVEST_GROUPS = 6;
+export const HARVEST_GROUPS = 12;
 
 /** Jobs whose advert is older than this are dropped from the Job Pool. */
 export const MAX_AGE_DAYS = 30;
